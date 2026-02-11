@@ -14,14 +14,28 @@ const firebaseConfig = {
 };
 
 let db = null;
+let firebaseConfigured = false;
+
 try {
-  firebase.initializeApp(firebaseConfig);
-  db = firebase.firestore();
+  // Check if Firebase config has placeholder values
+  if (
+    firebaseConfig.apiKey === "YOUR_API_KEY" ||
+    firebaseConfig.projectId === "YOUR_PROJECT_ID"
+  ) {
+    console.error("⚠️⚠️⚠️ FIREBASE IS NOT CONFIGURED! ⚠️⚠️⚠️");
+    console.error("Answers from your phone will NOT appear on your computer!");
+    console.error("Please replace the placeholder values in firebaseConfig with your real Firebase config.");
+    firebaseConfigured = false;
+  } else {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    firebaseConfigured = true;
+    console.log("✅ Firebase initialized successfully! Answers will sync across all devices.");
+  }
 } catch (e) {
-  console.warn(
-    "Firebase is not configured correctly yet. Local history will still work, but shared online responses won't.",
-    e
-  );
+  console.error("❌ Firebase initialization failed:", e);
+  console.error("Answers will only be saved locally on each device.");
+  firebaseConfigured = false;
 }
 
 // Keys & collection
@@ -31,7 +45,7 @@ const RESPONSES_COLLECTION = "responses"; // Firestore collection
 async function saveAnswer(choice) {
   const nowIso = new Date().toISOString();
 
-  // Save to localStorage (per-device)
+  // Save to localStorage (per-device backup)
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     let list = [];
@@ -49,17 +63,26 @@ async function saveAnswer(choice) {
     // ignore
   }
 
-  // Save to Firestore (shared online)
+  // Save to Firestore (shared online - THIS IS WHAT MAKES IT WORK ACROSS DEVICES)
+  if (!db) {
+    console.error("⚠️ Firebase is not configured! Answers are only saved locally on this device.");
+    console.error("To see answers from your phone on your computer, you MUST configure Firebase.");
+    return false; // Return false to indicate it didn't save to cloud
+  }
+
   try {
-    if (db) {
-      await db.collection(RESPONSES_COLLECTION).add({
-        choice,
-        time: firebase.firestore.FieldValue.serverTimestamp(),
-        userAgent: navigator.userAgent || "",
-      });
-    }
+    await db.collection(RESPONSES_COLLECTION).add({
+      choice,
+      time: firebase.firestore.FieldValue.serverTimestamp(),
+      userAgent: navigator.userAgent || "",
+      device: /Mobile|Android|iPhone|iPad/.test(navigator.userAgent) ? "Mobile" : "Desktop",
+    });
+    console.log("✅ Successfully saved to Firestore (cloud)!");
+    return true; // Success
   } catch (e) {
-    console.warn("Could not save to Firestore, using only local history.", e);
+    console.error("❌ Failed to save to Firestore:", e);
+    console.error("Error details:", e.message);
+    return false; // Failed
   }
 }
 
@@ -84,6 +107,12 @@ function initProposalPage() {
   const thankYouScreen = document.getElementById("thankYouScreen");
   const celebrationLayer = document.getElementById("celebrationLayer");
   const acceptSound = document.getElementById("acceptSound");
+  const firebaseWarning = document.getElementById("firebaseWarning");
+
+  // Show warning if Firebase is not configured
+  if (!firebaseConfigured && firebaseWarning) {
+    firebaseWarning.classList.remove("hidden");
+  }
 
   let rejectClicks = 0;
   let isSubmitted = false;
@@ -133,10 +162,15 @@ function initProposalPage() {
     }
 
     // Show what she chose right away
-    setStatus("She clicked NO (Reject) 💔", "error");
+    setStatus("Saving answer... 💾", "");
 
-    // Save locally so you can still see later (and admin page can read it)
-    saveAnswer("Reject");
+    // Save to cloud (Firestore) so it appears on admin page from any device
+    const saved = await saveAnswer("Reject");
+    if (saved) {
+      setStatus("She clicked NO (Reject) 💔 - Saved to cloud! ✅", "error");
+    } else {
+      setStatus("She clicked NO (Reject) 💔 - Saved locally only ⚠️", "error");
+    }
   });
 
   acceptBtn.addEventListener("click", async () => {
@@ -145,10 +179,15 @@ function initProposalPage() {
     const name = "My forever girl";
     const message = "";
 
-    setStatus("She clicked YES (Accept) 💖", "success");
+    setStatus("Saving answer... 💾", "");
 
-    // Save locally so you can still see later (and admin page can read it)
-    saveAnswer("Accept");
+    // Save to cloud (Firestore) so it appears on admin page from any device
+    const saved = await saveAnswer("Accept");
+    if (saved) {
+      setStatus("She clicked YES (Accept) 💖 - Saved to cloud! ✅", "success");
+    } else {
+      setStatus("She clicked YES (Accept) 💖 - Saved locally only ⚠️", "success");
+    }
 
     try {
       isSubmitted = true;
@@ -263,10 +302,18 @@ function initAdminPage() {
   async function loadResponses() {
     responsesBody.innerHTML = "";
 
-    // First try Firestore (shared online responses)
-    if (db) {
+    // Check if Firebase is configured
+    if (!db) {
+      emptyState.style.display = "block";
+      setAdminStatus(
+        "⚠️ Firebase is NOT configured! You can only see answers from THIS device. To see answers from your phone, configure Firebase in script.js",
+        "error"
+      );
+      // Still try to show local answers
+    } else {
+      // First try Firestore (shared online responses from ALL devices)
       try {
-        setAdminStatus("Loading responses from Firestore… ✨");
+        setAdminStatus("Loading responses from Firestore (cloud)… ✨");
         emptyState.style.display = "none";
 
         const snapshot = await db
@@ -280,7 +327,7 @@ function initAdminPage() {
             const tr = document.createElement("tr");
 
             const tdName = document.createElement("td");
-            tdName.textContent = "Someone special";
+            tdName.textContent = data.device === "Mobile" ? "📱 Mobile User" : "💻 Desktop User";
 
             const tdChoice = document.createElement("td");
             tdChoice.textContent = data.choice || "-";
@@ -308,17 +355,21 @@ function initAdminPage() {
           });
 
           emptyState.style.display = "none";
-          setAdminStatus("Loaded all online responses 💖", "success");
+          setAdminStatus(`✅ Loaded ${snapshot.size} response(s) from cloud (all devices) 💖`, "success");
           return;
         }
 
         // If Firestore is empty, fall back to local
         setAdminStatus(
-          "No online responses yet. Showing answers from this device.",
+          "No online responses in Firestore yet. Showing answers from THIS device only.",
           "error"
         );
       } catch (err) {
-        console.warn("Failed to load from Firestore, falling back to local.", err);
+        console.error("Failed to load from Firestore:", err);
+        setAdminStatus(
+          `❌ Error loading from Firestore: ${err.message}. Showing local answers only.`,
+          "error"
+        );
       }
     }
 
