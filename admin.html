@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Proposal Responses – Admin 💌</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Pacifico&display=swap" rel="stylesheet">
+</head>
+<body data-page="admin">
+  <div class="floating-hearts">
+    <span class="heart h1"></span>
+    <span class="heart h2"></span>
+    <span class="heart h3"></span>
+    <span class="heart h4"></span>
+    <span class="heart h5"></span>
+  </div>
+
+  <main class="center-wrapper">
+    <!-- Password Gate -->
+    <section id="loginCard" class="glass-card admin-card">
+      <h1 class="title-script">Admin Dashboard 💼💖</h1>
+      <p class="subtitle-soft">
+        This area is just for you. Enter the secret password to see all responses.
+      </p>
+
+      <form id="loginForm" class="proposal-form">
+        <div class="form-group">
+          <label for="adminPassword">Admin Password 🔐</label>
+          <input
+            type="password"
+            id="adminPassword"
+            placeholder="Enter your secret password..."
+            required
+          />
+        </div>
+
+        <div class="button-row single">
+          <button type="submit" class="btn primary">
+            Unlock Responses
+          </button>
+        </div>
+
+        <p id="loginError" class="status-message error"></p>
+      </form>
+    </section>
+
+    <!-- Dashboard -->
+    <section id="adminDashboard" class="glass-card admin-card hidden">
+      <header class="admin-header">
+        <div>
+          <h2 class="title-script">Proposal Responses 💌</h2>
+          <p class="subtitle-soft">
+            All the precious answers, safely stored in the stars (and Firestore). ✨
+          </p>
+        </div>
+        <button id="refreshBtn" class="btn ghost small">
+          🔄 Refresh
+        </button>
+      </header>
+
+      <p id="adminStatus" class="status-message" aria-live="polite"></p>
+
+      <div class="table-wrapper">
+        <table class="responses-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Choice</th>
+              <th>Message</th>
+              <th>Date &amp; Time</th>
+            </tr>
+          </thead>
+          <tbody id="responsesBody">
+            <!-- Rows injected by JS -->
+          </tbody>
+        </table>
+        <p id="emptyState" class="empty-state">No response yet 🥹</p>
+      </div>
+    </section>
+  </main>
+  <!-- Firebase (for shared online responses) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <!-- Main logic -->
+  <script src="script.js"></script>
+</body>
+</html>
+
