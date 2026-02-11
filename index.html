@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Will You Be My Girlfriend? 💖</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&family=Pacifico&display=swap" rel="stylesheet">
+</head>
+<body data-page="proposal">
+  <div class="floating-hearts">
+    <span class="heart h1"></span>
+    <span class="heart h2"></span>
+    <span class="heart h3"></span>
+    <span class="heart h4"></span>
+    <span class="heart h5"></span>
+  </div>
+
+  <audio id="acceptSound" src="accept-sound.mp3" preload="auto"></audio>
+
+  <main class="center-wrapper">
+    <section class="glass-card proposal-card">
+      <h1 class="title-script">Will you be my girlfriend? 💖</h1>
+      <p class="subtitle-soft">
+        This is a very serious, super romantic question. Answer carefully… 🥺
+      </p>
+
+      <div id="proposalForm" class="proposal-form">
+        <p class="letter-text">
+          From the very first moment I met you, something in my heart quietly
+          chose you. The way you smile, the way you laugh, the way you care —
+          it all feels like home to me. I don’t just like you, I adore you.
+          I want to be the reason you feel loved, safe, and special every single day.
+          So today, with all my heart, I’m asking…
+        </p>
+
+        <p id="playfulMessage" class="playful-message">
+          I’m really hoping for a “Yes”... 😳
+        </p>
+
+        <div class="button-row">
+          <button type="button" id="acceptBtn" class="btn primary">
+            ✅ Accept ❤️
+          </button>
+          <button type="button" id="rejectBtn" class="btn ghost">
+            ❌ Reject 💔
+          </button>
+        </div>
+
+        <p id="statusMessage" class="status-message" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section id="thankYouScreen" class="glass-card thank-you hidden">
+      <h2 class="title-script">Yayyy! I knew it 😍❤️</h2>
+      <p class="subtitle-soft">
+        You just made my heart the happiest.  
+        Thank you for saying yes — I promise to make you feel loved every single day. 💫
+      </p>
+    </section>
+  </main>
+
+  <div id="celebrationLayer" class="celebration-layer hidden"></div>
+
+  <!-- Firebase (for shared online responses) -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <!-- Main logic -->
+  <script src="script.js"></script>
+</body>
+</html>
+
